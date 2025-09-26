@@ -1,6 +1,6 @@
 import uuid # For generating unique IDs for our calculations
 import datetime
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pymongo import MongoClient
 from fastapi.middleware.cors import CORSMiddleware
 from rpn_calculator_utils import transform_to_rpn, evaluate_rpn, Expression
@@ -44,6 +44,8 @@ def log_step(a: float, b: float, operator: str, result: float, calculation_id: s
 def evaluate_expression(expression: Expression):
     """ Evaluates an expression and returns a result + calculation ID. """
     try: 
+        print(f"Received expression: {expression.expression} (type: {type(expression.expression)})")
+        
         rpn = transform_to_rpn(expression.expression)
         calculation_id = str(uuid.uuid4())
         result = evaluate_rpn(rpn, log_function=log_step, calculation_id=calculation_id)
@@ -62,8 +64,14 @@ def evaluate_expression(expression: Expression):
             "expression": expression.expression,
             "result": result,
         }
+    except ZeroDivisionError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError as e:
+        print(f"ValueError: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Invalid operation: {str(e)}")
     except Exception as e:
-        return {"error": str(e)}
+        print(f"Unexpected Error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error.")
 
 @app.get("/calculator/history/{calculation_id}/details")
 def get_calculation_history_details(calculation_id: str):
@@ -93,6 +101,7 @@ def obtain_history():
     for record in records:
         history.append({
             "calculation_id": record.get("calculation_id"),
+            "expression": record.get("expression"),
             "result": record.get("result"),
             "date": record["date"] if "date" in record else None
         })
@@ -109,6 +118,7 @@ def obtain_latest_calculation():
     for record in records:
         history.append({
             "calculation_id": record.get("calculation_id"),
+            "expression": record.get("expression"),
             "result": record.get("result"),
             "date": record["date"] if "date" in record else None
         })
