@@ -20,6 +20,19 @@ interface HistoryCardProps {
   date: string;
 }
 
+function formatUtcDate(rawDate: string): string {
+  // Match ISO-like strings with >3 millisecond digits and trim to 3
+  const cleanedDate = rawDate.replace(/(\.\d{3})\d+/, '$1') + 'Z';
+  const parsedDate = new Date(cleanedDate);
+
+  // If invalid, fallback
+  if (isNaN(parsedDate.getTime())) {
+    return 'Invalid date';
+  }
+
+  return parsedDate.toUTCString();
+}
+
 const HistoryCard = ({
   calculationId,
   expression,
@@ -121,7 +134,7 @@ const HistoryCard = ({
       )}
 
       <CardFooter>
-        <p className="text-zinc-500 text-xs">{new Date(date).toUTCString()}</p>
+        <p className="text-zinc-500 text-xs">{formatUtcDate(date)}</p>
       </CardFooter>
     </Card>
   );
