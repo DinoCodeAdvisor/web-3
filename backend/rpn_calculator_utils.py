@@ -1,17 +1,29 @@
 from pydantic import BaseModel
 import operator
 import re
+import httpx
+import asyncio
 
 # Available operations
 operations = {
-    '+': operator.add,
-    '-': operator.sub,
-    '*': operator.mul,
-    '/': operator.truediv
+    '+': "http://calculadora:8000/calculator/add",
+    '-': "http://calculadora:8000/calculator/subtract",
+    '*': "http://calculadora:8000/calculator/multiply",
+    '/': "http://calculadora:8000/calculator/divide"
 }
 
 class Expression(BaseModel):
     expression: str
+
+async def call_operator_api(op: str, a: float, b: float) -> float:
+    url = operations.get(op)
+    if not url:
+        raise ValueError(f"Unsupported operator: {op}")
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, json={"a": a, "b": b})
+        response.raise_for_status()
+        return response.json()["result"]
 
 def preprocess_negatives(expr: str) -> str:
     """
@@ -78,16 +90,14 @@ def transform_to_rpn(expression: str) -> list:
 
     return output
 
-def evaluate_rpn(rpn_tokens: list, log_function, calculation_id: str) -> float:
+async def evaluate_rpn_async(rpn_tokens: list, log_function, calculation_id: str) -> float:
     """Evaluates an RPN expression and logs each operation step."""
-    print(f"Received RPN tokens: {rpn_tokens} (type: {type(rpn_tokens)})")
 
     stack = []
 
     for token in rpn_tokens:
         if isinstance(token, float):
             stack.append(token)
-
         elif token in operations:
             if len(stack) < 2:
                 raise ValueError("Insufficient operands for the operator.")
@@ -95,20 +105,15 @@ def evaluate_rpn(rpn_tokens: list, log_function, calculation_id: str) -> float:
             b = stack.pop()
             a = stack.pop()
 
-            if token == '/' and b == 0:
-                raise ZeroDivisionError("Division by zero is not allowed.")
+            result = await call_operator_api(token, a, b)
 
-            result = operations[token](a, b)
-
-            # Log the operation
             log_function(a, b, token, result, calculation_id)
 
             stack.append(result)
-
         else:
-            raise ValueError(f"Unknown token in RPN expression: {token}")
+            raise ValueError(f"Unknown token: {token}")
 
     if len(stack) != 1:
-        raise ValueError("Invalid RPN expression. Too many operands.")
+        raise ValueError("Invalid RPN expression.")
 
     return stack[0]

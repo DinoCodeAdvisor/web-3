@@ -20,33 +20,22 @@ def patch_mongo(monkeypatch):
     monkeypatch.setattr(main, "collection_calculations", mock_calculations)
     monkeypatch.setattr(main, "collection_steps", mock_steps)
 
-# Parametrized test for multiple expressions including negatives
+# --------------------------
+# ✅ Expression Evaluation Tests (Success)
+# --------------------------
 @pytest.mark.parametrize("expression_str, expected_result", [
-    # Basic expressions
     ("1 + 2", 3),
     ("2 * 3", 6),
     ("(1 + 2) * 3", 9),
     ("10 / 2", 5),
     ("3 + 4 * 2", 11),
     ("100 - (50 + 25)", 25),
-
-    # Negative numbers
-    ("-3 + 5", 2),
-    ("2 * -4", -8),
-    ("-2 * -3", 6),
-    ("-3 / -1", 3),
-    ("5 + -2", 3),
-    ("(0 - 3) * 2", -6), 
-
-    # Complex with nested parentheses and negatives
-    ("(1 + -2) * (-3)", 3),
 ])
 def test_evaluate_expression_param(expression_str, expected_result):
-    # Clean database before test
+    # Clean DB
     mock_calculations.delete_many({})
     mock_steps.delete_many({})
 
-    # Call API
     response = client.post("/calculator/evaluate", json={"expression": expression_str})
     assert response.status_code == 200
 
@@ -55,13 +44,33 @@ def test_evaluate_expression_param(expression_str, expected_result):
     assert result["expression"] == expression_str
     assert pytest.approx(result["result"], 0.001) == expected_result
 
-    # Verify calculation saved in DB
+    # Check DB insertion
     saved_calc = mock_calculations.find_one({"calculation_id": result["calculation_id"]})
     assert saved_calc is not None
     assert pytest.approx(saved_calc["result"], 0.001) == expected_result
 
 
-# Test detailed steps of a known calculation
+# --------------------------
+# ❌ Expression Evaluation Tests (With Negative Numbers – Expected Failure)
+# --------------------------
+@pytest.mark.parametrize("expression_str", [
+    "-3 + 5",
+    "2 * -4",
+    "-2 * -3",
+    "-3 / -1",
+    "5 + -2",
+    "(0 - 3) * 2",
+    "(1 + -2) * (-3)",
+])
+def test_evaluate_expression_negatives_fail(expression_str):
+    response = client.post("/calculator/evaluate", json={"expression": expression_str})
+    assert response.status_code == 400
+    assert "Negative numbers are not allowed" in response.text
+
+
+# --------------------------
+# ✅ Calculation History Details
+# --------------------------
 def test_get_calculation_history_details():
     calc_id = "dummy123"
     mock_steps.insert_one({
@@ -85,7 +94,9 @@ def test_get_calculation_history_details():
     assert result["steps"][0]["result"] == 5
 
 
-# Test full calculation history list
+# --------------------------
+# ✅ Full Calculation History
+# --------------------------
 def test_obtain_history():
     mock_calculations.insert_one({
         "calculation_id": "test123",
@@ -101,12 +112,13 @@ def test_obtain_history():
     assert any(h["calculation_id"] == "test123" for h in history)
 
 
-# Test latest calculation
+# --------------------------
+# ✅ Latest Calculation
+# --------------------------
 def test_obtain_latest_calculation():
     mock_calculations.delete_many({})
     mock_steps.delete_many({})
 
-    # Insert dummy latest calculation
     mock_calculations.insert_one({
         "calculation_id": "latest1",
         "expression": "9 - 5",
@@ -132,3 +144,56 @@ def test_obtain_latest_calculation():
     assert data["history"][0]["expression"] == "9 - 5"
     assert data["steps"][0]["result"] == 4
     assert data["steps"][0]["operator"] == "-"
+
+
+# --------------------------
+# ✅ Microservice Endpoints (Success)
+# --------------------------
+def test_add_operands():
+    response = client.post("/calculator/add", json={"a": 4, "b": 5})
+    assert response.status_code == 200
+    assert response.json()["result"] == 9
+
+def test_subtract_operands():
+    response = client.post("/calculator/subtract", json={"a": 9, "b": 3})
+    assert response.status_code == 200
+    assert response.json()["result"] == 6
+
+def test_multiply_operands():
+    response = client.post("/calculator/multiply", json={"a": 2, "b": 5})
+    assert response.status_code == 200
+    assert response.json()["result"] == 10
+
+def test_divide_operands():
+    response = client.post("/calculator/divide", json={"a": 10, "b": 2})
+    assert response.status_code == 200
+    assert response.json()["result"] == 5.0
+
+
+# --------------------------
+# ❌ Microservice Error Tests
+# --------------------------
+def test_add_negatives_fail():
+    response = client.post("/calculator/add", json={"a": -1, "b": 2})
+    assert response.status_code == 400
+    assert "Negative numbers are not allowed" in response.text
+
+def test_subtract_negatives_fail():
+    response = client.post("/calculator/subtract", json={"a": 5, "b": -2})
+    assert response.status_code == 400
+    assert "Negative numbers are not allowed" in response.text
+
+def test_multiply_negatives_fail():
+    response = client.post("/calculator/multiply", json={"a": -2, "b": -3})
+    assert response.status_code == 400
+    assert "Negative numbers are not allowed" in response.text
+
+def test_divide_by_zero_fail():
+    response = client.post("/calculator/divide", json={"a": 10, "b": 0})
+    assert response.status_code == 400
+    assert "Division by zero" in response.text
+
+def test_divide_negatives_fail():
+    response = client.post("/calculator/divide", json={"a": -10, "b": 2})
+    assert response.status_code == 400
+    assert "Negative numbers are not allowed" in response.text

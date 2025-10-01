@@ -81,8 +81,40 @@ export const evaluateExpression = async (
 };
 
 
-export const fetchHistory = async (): Promise<CalculationHistoryItem[]> => {
-  const response = await fetch(`${API_BASE_URL}/history`);
+export const fetchHistory = async (
+  operationTypes: string[] = [],
+  startDate: Date | null = null,
+  endDate: Date | null = null,
+  sortBy: string = "date",
+  sortOrder: string = "desc"
+): Promise<CalculationHistoryItem[]> => {
+  // Create query parameters
+  const params: Record<string, string> = {};
+
+  if (operationTypes.length > 0) {
+    params.operation_types = operationTypes.join(",");
+  }
+
+  if (startDate) {
+    params.start_date = startDate.toISOString();
+  }
+
+  if (endDate) {
+    params.end_date = endDate.toISOString();
+  }
+
+  if (sortBy) {
+    params.sort_by = sortBy;
+  }
+
+  if (sortOrder) {
+    params.sort_order = sortOrder;
+  }
+
+  // Construct query string
+  const queryString = new URLSearchParams(params).toString();
+
+  const response = await fetch(`${API_BASE_URL}/history?${queryString}`);
   if (!response.ok) throw new Error("Failed to fetch history");
 
   const data: HistoryResponse = await response.json();
