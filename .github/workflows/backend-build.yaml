@@ -1,14 +1,16 @@
-name: Build and Push Frontend Docker Image
+name: Build and Push Backend Docker Image
 
 on:
   push:
     branches:
       - main
+    tags:
+      - 'v*.*.*'
     paths:
-      - 'frontend/**'
+      - 'backend/**'
   pull_request:
     paths:
-      - 'frontend/**'
+      - 'backend/**'
 
 jobs:
   build:
@@ -42,10 +44,22 @@ jobs:
             echo "TAG=latest" >> $GITHUB_ENV
           fi
 
-      - name: Build Docker Image
-        run: |
-          docker build -t ghcr.io/${{ env.REPO_LOWER }}:${{ env.TAG }} ./frontend
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ghcr.io/${{ github.repository }}/backend
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern=v{{version}}
+            type=sha
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
-      - name: Push Docker Image
-        run: |
-          docker push ghcr.io/${{ env.REPO_LOWER }}:${{ env.TAG }}
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
