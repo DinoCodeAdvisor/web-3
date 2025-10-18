@@ -1,6 +1,19 @@
 # Light based image for python 3.13
 FROM python:3.13-slim
 
+# Install system-level dependencies for packages like mysqlclient, cryptography, Pillow, etc.
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    default-libmysqlclient-dev \
+    pkg-config \
+    libssl-dev \
+    libffi-dev \
+    libjpeg-dev \
+    zlib1g-dev \
+    libpng-dev \
+    python3-dev \
+    && rm -rf /var/lib/apt/lists/*
+    
 # Set the working directory in the container
 WORKDIR /app
 
