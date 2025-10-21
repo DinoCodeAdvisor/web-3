@@ -11,7 +11,7 @@ services:
       - mongo-network
 
   calculadora:
-    image: calculadora-fast-api
+    image: ghcr.io/dinocodeadvisor/web-3/backend:latest
     ports:
       - "8089:8000"
     volumes:
@@ -20,7 +20,7 @@ services:
       - mongo-network
 
   frontend:
-    image: frontend-react
+    image: ghcr.io/dinocodeadvisor/web-3/frontend:latest
     ports:
       - "5173:5173"
     volumes:
