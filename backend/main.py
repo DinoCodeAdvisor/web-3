@@ -56,7 +56,7 @@ def sum_numbers(a: float, b: float):
     collection_historial.insert_one(document)
 
     logger.info(f"Operación suma exitoso")
-    logger.debug(f"Operación suma: a={a}, b={b}, resultado={resultado}")
+    logger.debug(f"Operación suma: a={a}, b={b}, result={result}")
 
     return {"a": a, "b": b, "result": result}
 
@@ -72,7 +72,7 @@ def divide_numbers(a: float, b: float):
     result = a / b
 
     document = {
-        "resultado": resultado,
+        "result": result,
         "a": a,
         "b": b,
         "date": datetime.datetime.now(tz=datetime.timezone.utc),
@@ -83,7 +83,7 @@ def divide_numbers(a: float, b: float):
     logger.info(f"Operación dividir exitoso")
     logger.debug(f"Operación dividir: a={a}, b={b}, result={result}")
 
-    return {"a": a, "b": b, "resultado": result}
+    return {"a": a, "b": b, "result": result}
 
 @app.get("/calculator/history")
 def obtain_history():
