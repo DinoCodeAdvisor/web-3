@@ -1,6 +1,6 @@
 import datetime
 import logging
-import os
+import os, sys
 from fastapi import FastAPI
 from pymongo import MongoClient
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,6 +16,14 @@ if logging_data == "DEBUG":
 elif logging_data == "INFO":
     logger.setLevel(logging.INFO)
 
+# Create a console handler
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setLevel(logger.level)
+formatter = logging.Formatter(
+    "%(levelname)s: %(asctime)s - %(name)s - %(message)s"
+)
+console_handler.setFormatter(formatter)
+
 # Create an instance of the custom handler
 custom_handler = LokiLoggerHandler(
     url="http://loki:3100/loki/api/v1/push",
@@ -24,6 +32,7 @@ custom_handler = LokiLoggerHandler(
     timeout=10,
 )
 
+logger.addHandler(console_handler)
 logger.addHandler(custom_handler)
 logger.info("Logger initialized")
 

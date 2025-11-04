@@ -38,18 +38,6 @@ services:
     networks:
       - practicas_mongo-network
 
-  promtail:
-    image: grafana/promtail:latest
-    container_name: promtail
-    depends_on:
-      - loki
-    volumes:
-      - ./promtail-config.yaml:/etc/promtail/config.yaml
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      - /var/run/docker.sock:/var/run/docker.sock
-    networks:
-      - practicas_mongo-network
-
 networks:
   practicas_mongo-network:
     external: true  # Make sure this network exists or create it
