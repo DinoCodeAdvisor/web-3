@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from pymongo import MongoClient
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
-from loki_logger_handler.loki_logger_handler import LokiLoggerHandler
+from loki_logger_handler.loki_logger_handler import LokiLoggerHandler # Imported loki (again)
 
 # Set up logging
 logger = logging.getLogger("custom_logger")
