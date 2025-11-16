@@ -1,7 +1,6 @@
 services:
   mongo:
     image: mongo:latest
-    restart: always
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin_user 
       MONGO_INITDB_ROOT_PASSWORD: web3
@@ -11,7 +10,8 @@ services:
       - mongo-network
 
   calculadora:
-    image: calculadora-fast-api
+    image: ghcr.io/dinocodeadvisor/web-3/examen-p2-backend:sha-4e96eef
+    pull_policy: always
     ports:
       - "8089:8000"
     volumes:
@@ -20,7 +20,8 @@ services:
       - mongo-network
 
   frontend:
-    image: frontend-react
+    image: ghcr.io/dinocodeadvisor/web-3/examen-p2-frontend:sha-a04eb9e
+    pull_policy: always
     ports:
       - "5173:5173"
     volumes:
