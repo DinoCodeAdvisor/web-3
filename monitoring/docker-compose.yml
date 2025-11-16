@@ -1,0 +1,43 @@
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: examenparcial2-prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - '9090:9090'
+    networks:
+      - examenparcial2_mongo-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: examenparcial2-grafana
+    ports:
+      - '3001:3000'
+    networks:
+      - examenparcial2_mongo-network
+    depends_on:
+      - prometheus
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./grafana-data:/var/lib/grafana
+
+  loki:
+    image: grafana/loki:latest
+    container_name: examenparcial2-loki
+    command: -config.file=/etc/loki/config.yaml
+    volumes:
+      - ./loki-config.yaml:/etc/loki/config.yaml
+      - ./loki-data:/loki
+    ports:
+      - '3100:3100'
+    networks:
+      - examenparcial2_mongo-network
+
+networks:
+  examenparcial2_mongo-network:
+    external: true  # Make sure this network exists or create it
