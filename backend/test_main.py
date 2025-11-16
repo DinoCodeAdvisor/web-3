@@ -4,6 +4,10 @@ import datetime
 import mongomock
 from fastapi.testclient import TestClient
 from rpn_calculator_utils import Expression
+import os
+
+# Sets an enviroment variable to allow testing on mock calling the api 
+os.environ["TESTING"] = "1"
 
 # Set up test client
 client = TestClient(main.app)
@@ -19,6 +23,7 @@ mock_steps = mock_db.calculation_steps
 def patch_mongo(monkeypatch):
     monkeypatch.setattr(main, "collection_calculations", mock_calculations)
     monkeypatch.setattr(main, "collection_steps", mock_steps)
+
 
 # --------------------------
 # ✅ Expression Evaluation Tests (Success)
@@ -51,21 +56,21 @@ def test_evaluate_expression_param(expression_str, expected_result):
 
 
 # --------------------------
-# ❌ Expression Evaluation Tests (With Negative Numbers – Expected Failure)
+# ✅ Expression Evaluation Tests (Negative Numbers Allowed)
 # --------------------------
-@pytest.mark.parametrize("expression_str", [
-    "-3 + 5",
-    "2 * -4",
-    "-2 * -3",
-    "-3 / -1",
-    "5 + -2",
-    "(0 - 3) * 2",
-    "(1 + -2) * (-3)",
+@pytest.mark.parametrize("expression_str, expected_result", [
+    ("-3 + 5", 2),
+    ("2 * -4", -8),
+    ("-2 * -3", 6),
+    ("-3 / -1", 3),
+    ("5 + -2", 3),
+    ("(0 - 3) * 2", -6),
+    ("(1 + -2) * (-3)", 3),
 ])
-def test_evaluate_expression_negatives_fail(expression_str):
+def test_evaluate_expression_negatives(expression_str, expected_result):
     response = client.post("/calculator/evaluate", json={"expression": expression_str})
-    assert response.status_code == 400
-    assert "Negative numbers are not allowed" in response.text
+    assert response.status_code == 200
+    assert pytest.approx(response.json()["result"], 0.001) == expected_result
 
 
 # --------------------------

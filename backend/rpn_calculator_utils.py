@@ -16,6 +16,28 @@ class Expression(BaseModel):
     expression: str
 
 async def call_operator_api(op: str, a: float, b: float) -> float:
+    """
+    Calls the real microservice normally.
+    But when running tests (TESTING=1), bypasses HTTP and
+    executes the arithmetic locally.
+    """
+    import os
+
+    # --- Test mode: No HTTP calls ---
+    if os.getenv("TESTING") == "1":
+        if op == "+":
+            return a + b
+        if op == "-":
+            return a - b
+        if op == "*":
+            return a * b
+        if op == "/":
+            if b == 0:
+                raise ZeroDivisionError("Division by zero")
+            return a / b
+        raise ValueError(f"Unsupported operator: {op}")
+
+    # --- Normal mode: microservice calls ---
     url = operations.get(op)
     if not url:
         raise ValueError(f"Unsupported operator: {op}")
