@@ -7,7 +7,7 @@ services:
     ports:
       - "27020:27017"
     networks:
-      - mongo-network
+      - examenparcial2_mongo-network
 
   calculadora:
     image: ghcr.io/dinocodeadvisor/web-3/examen-p2-backend:sha-4e96eef
@@ -17,7 +17,7 @@ services:
     volumes:
       - ./backend:/app
     networks:
-      - mongo-network
+      - examenparcial2_mongo-network
 
   frontend:
     image: ghcr.io/dinocodeadvisor/web-3/examen-p2-frontend:sha-a04eb9e
@@ -32,8 +32,8 @@ services:
     depends_on:
       - calculadora
     networks:
-      - mongo-network
+      - examenparcial2_mongo-network
 
 networks:
-  mongo-network:
+  examenparcial2_mongo-network:
     driver: bridge
