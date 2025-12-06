@@ -73,7 +73,7 @@ sqlparse==0.5.3
 starlette==0.47.3
 typing-inspection==0.4.1
 typing_extensions==4.15.0
-urllib3==2.5.0
+urllib3==2.6.0
 uvicorn==0.35.0
 websocket-client==1.9.0
 Werkzeug==3.1.3
